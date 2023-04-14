@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name =  "rmsyutls"
 description = "Utility functions for Ramsey"
-authors = [{name = "Simon Dirmeier", email = "sfyrbnd @ pm me"}]
+authors = [{name = "Simon Dirmeier", email = "sfyrbnd@pm.me"}]
 readme = "README.md"
 license = "Apache-2.0"
 homepage = "https://github.com/ramsey-devs/rmsy-utls"
