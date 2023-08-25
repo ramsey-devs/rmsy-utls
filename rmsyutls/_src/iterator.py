@@ -25,7 +25,7 @@ def as_batch_iterators(
     data: NamedTuple,
     batch_size: int = 64,
     train_val_split: float = 0.9,
-    shuffle :bool =True
+    shuffle: bool = True,
 ):
     """
     Create iterators of subsets of a data set
@@ -69,7 +69,9 @@ def as_batch_iterators(
 
 
 # pylint: disable=missing-function-docstring
-def as_batch_iterator(rng_key: chex.PRNGKey, data: NamedTuple, batch_size, shuffle):
+def as_batch_iterator(
+    rng_key: chex.PRNGKey, data: NamedTuple, batch_size, shuffle
+):
     """
     Create a batch iterator
 
