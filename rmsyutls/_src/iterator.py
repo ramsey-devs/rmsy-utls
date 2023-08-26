@@ -3,7 +3,7 @@ from typing import NamedTuple
 import chex
 from jax import lax
 from jax import numpy as jnp
-from jax import random
+from jax import random as jr
 
 
 # pylint: disable=missing-class-docstring,too-few-public-methods
@@ -19,24 +19,49 @@ class _DataLoader:
         return self.get_batch(idx, idxs)
 
 
-# pylint: disable=missing-function-docstring
+# pylint: disable=too-many-locals
 def as_batch_iterators(
-    rng_key: chex.PRNGKey, data: NamedTuple, batch_size, split, shuffle
+    seed: chex.PRNGKey,
+    data: NamedTuple,
+    batch_size: int = 64,
+    train_val_split: float = 0.9,
+    shuffle: bool = True,
 ):
+    """
+    Create iterators of subsets of a data set
+
+    Parameters
+    ----------
+    seed: chex.PRNGKey
+        a random key
+    data: NamedTuple
+        a data set that consists of multiple named elements
+    batch_size: int
+        size of each batch an iterator returns
+    train_val_split: float
+        a fraction determining the relative size of the training iterator
+    shuffle: bool
+        boolean if data should be shuffled along first axis
+
+    Returns
+    -------
+    Tuple[Iterator, Iterator]
+        returns two iterators
+    """
+
     n = data[0].shape[0]
     ctor = data.__class__
-    n_train = int(n * split)
+
+    idx_key, seed = jr.split(seed)
+    idxs = jr.permutation(idx_key, jnp.arange(n))
     if shuffle:
-        data = ctor(
-            *[
-                random.permutation(rng_key, el, independent=False)
-                for _, el in enumerate(data)
-            ]
-        )
+        data = ctor(*[el[idxs] for _, el in enumerate(data)])
+
+    n_train = int(n * train_val_split)
     y_train = ctor(*[el[:n_train, :] for el in data])
     y_val = ctor(*[el[n_train:, :] for el in data])
-    train_rng_key, val_rng_key = random.split(rng_key)
 
+    train_rng_key, val_rng_key, seed = jr.split(seed, 3)
     train_itr = as_batch_iterator(train_rng_key, y_train, batch_size, shuffle)
     val_itr = as_batch_iterator(val_rng_key, y_val, batch_size, shuffle)
 
@@ -45,8 +70,28 @@ def as_batch_iterators(
 
 # pylint: disable=missing-function-docstring
 def as_batch_iterator(
-    rng_key: chex.PRNGKey, data: NamedTuple, batch_size, shuffle
+    seed: chex.PRNGKey, data: NamedTuple, batch_size: int, shuffle: float
 ):
+    """
+    Create a batch iterator
+
+    Parameters
+    ----------
+    seed: chex.PRNGKey
+       a random key
+    data: NamedTuple
+       a data set that consists of multiple named elements
+    batch_size: int
+       size of each batch an iterator returns
+    shuffle: bool
+       boolean if data should be shuffled along first axis
+
+    Returns
+    -------
+    Iterator
+       returns an iterator
+    """
+
     n = data[0].shape[0]
     if n < batch_size:
         num_batches = 1
@@ -58,7 +103,7 @@ def as_batch_iterator(
 
     idxs = jnp.arange(n)
     if shuffle:
-        idxs = random.permutation(rng_key, idxs)
+        idxs = jr.permutation(seed, idxs)
 
     def get_batch(idx, idxs=idxs):
         start_idx = idx * batch_size
