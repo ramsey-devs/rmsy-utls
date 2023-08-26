@@ -19,7 +19,7 @@ class _DataLoader:
         return self.get_batch(idx, idxs)
 
 
-# pylint: disable=missing-function-docstring
+# pylint: disable=too-many-locals
 def as_batch_iterators(
     seed: chex.PRNGKey,
     data: NamedTuple,
@@ -53,7 +53,7 @@ def as_batch_iterators(
     ctor = data.__class__
 
     idx_key, seed = jr.split(seed)
-    idxs = jr.permutation(jr.PRNGKey(idx_key), jnp.arange(n))
+    idxs = jr.permutation(idx_key, jnp.arange(n))
     if shuffle:
         data = ctor(*[el[idxs] for _, el in enumerate(data)])
 
@@ -70,7 +70,7 @@ def as_batch_iterators(
 
 # pylint: disable=missing-function-docstring
 def as_batch_iterator(
-    rng_key: chex.PRNGKey, data: NamedTuple, batch_size, shuffle
+    seed: chex.PRNGKey, data: NamedTuple, batch_size: int, shuffle: float
 ):
     """
     Create a batch iterator
@@ -103,7 +103,7 @@ def as_batch_iterator(
 
     idxs = jnp.arange(n)
     if shuffle:
-        idxs = jr.permutation(rng_key, idxs)
+        idxs = jr.permutation(seed, idxs)
 
     def get_batch(idx, idxs=idxs):
         start_idx = idx * batch_size
